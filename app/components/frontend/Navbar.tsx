@@ -14,9 +14,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-/* =====================================================================
-   মেনু এখানে সাজানো — নতুন পেজ/সাব-মেনু লাগলে শুধু এই array-তে যোগ করুন
-   ===================================================================== */
 type SubItem = { label: string; href: string; desc?: string; icon: LucideIcon };
 type NavItem =
   | { label: string; href: string; children?: never }
@@ -37,11 +34,11 @@ const NAV_ITEMS: NavItem[] = [
       { label: 'প্রশ্ন উত্তর', href: '/faq', desc: 'সাধারণ প্রশ্নের উত্তর', icon: CircleHelp },
     ],
   },
-  { label: 'ব্লগ', href: '/blog' }, // /blog/… ডিটেইল পেজেও active থাকে
+  { label: 'টিউটোরিয়াল', href: '/tutorial' },
+  { label: 'ব্লগ', href: '/blog' },
   { label: 'যোগাযোগ', href: '/contact-us' },
 ];
 
-/* বর্তমান URL-এর সাথে মিলিয়ে active বের করা */
 const matchPath = (pathname: string, href: string) =>
   href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 

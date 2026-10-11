@@ -39,7 +39,6 @@ async function api<T>(path: string, revalidate = REVALIDATE): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}`, {
-      // Accept না দিলে Laravel 404/422-এ HTML পাঠাতে পারে
       headers: { Accept: 'application/json' },
       next: { revalidate, tags: ['blog'] },
       signal: AbortSignal.timeout(10000),
@@ -72,7 +71,6 @@ export const getBlog = cache(async (slug: string): Promise<BlogPostDetail | null
   }
 });
 
-/** build-এর সময় সব পোস্টের পেজ আগে থেকে বানাতে (generateStaticParams) */
 export async function getAllBlogSlugs(maxPages = 20): Promise<string[]> {
   const slugs: string[] = [];
   try {
@@ -82,7 +80,7 @@ export async function getAllBlogSlugs(maxPages = 20): Promise<string[]> {
       if (!r.meta || page >= r.meta.last_page) break;
     }
   } catch {
-    /* API বন্ধ থাকলে build আটকাবে না — পেজ প্রথম ভিজিটে তৈরি হবে */
+
   }
   return slugs;
 }
@@ -92,7 +90,7 @@ export async function getRelatedBlogs(slug: string, limit = 3): Promise<BlogPost
     const r = await api<{ data: BlogPost[] }>(`/school/blogs/${encodeURIComponent(slug)}/related?limit=${limit}`, 300);
     return r.data ?? [];
   } catch {
-    return []; // related না পেলে পেজ ভাঙবে না
+    return [];
   }
 }
 
