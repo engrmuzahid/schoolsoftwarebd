@@ -1,8 +1,3 @@
-/**
- * Breadcrumb — শেষ আইটেমটা বর্তমান পেজ (লিংক ছাড়া, রঙিন)
- *   <Breadcrumb items={[{ label: 'ব্লগ', href: '/blog' }, { label: post.title }]} />
- * "মূল পাতা" নিজে থেকেই শুরুতে বসে। Google-এর BreadcrumbList schema-ও সাথে যায়।
- */
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { SITE_URL } from '@/config/env';

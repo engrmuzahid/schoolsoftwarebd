@@ -1,23 +1,13 @@
-/**
- * ডেমো, টেমপ্লেট ও রেজিস্ট্রেশনের সব সেটিং এক জায়গায়।
- * ডোমেইন NEXT_PUBLIC_APP_ENV থেকে ঠিক হয় (দেখুন app/lib/env.ts):
- *   development → http://xxx.schoolsoftwarebd.test
- *   production  → https://xxx.schoolsoftwarebd.com
- */
 import { schoolSiteUrl } from './env';
 
-/** siteUrl('admin', '/login') → http://admin.schoolsoftwarebd.test/login */
 export const siteUrl = schoolSiteUrl;
 
-/* ---------------------------- frontend templates ---------------------------- */
-/** কোন ডেমো স্কুলের সাইটে টেমপ্লেট প্রিভিউ দেখানো হবে */
 export const TEMPLATE_DEMO_SCHOOL = 'nondomohol';
 
 export type FrontendTemplate = {
   title: string;
   slug: string;
   description: string;
-  /** প্রিভিউ ছবি — Next.js-এর public/ ফোল্ডার থেকে */
   image: string;
 };
 
@@ -62,11 +52,9 @@ export const FRONTEND_TEMPLATES: FrontendTemplate[] = [
   },
 ];
 
-/** templateDemoUrl('prism') → http://nondomohol.schoolsoftwarebd.test/?template_slug=prism */
 export const templateDemoUrl = (slug: string) =>
   `${siteUrl(TEMPLATE_DEMO_SCHOOL, '/')}?${new URLSearchParams({ template_slug: slug }).toString()}`;
 
-/* ------------------------------ panel logins ------------------------------ */
 export type PanelLogin = { loginUrl: string; username: string; password: string };
 
 export const ADMIN_LOGIN: PanelLogin = {
@@ -76,13 +64,11 @@ export const ADMIN_LOGIN: PanelLogin = {
 };
 
 export const TEACHER_LOGIN: PanelLogin = {
-  // শিক্ষকরাও একই প্যানেল থেকে লগইন করেন; আলাদা হলে শুধু এই লাইন বদলান
   loginUrl: siteUrl('admin', '/login'),
   username: 'teacher@email.com',
   password: '123456',
 };
 
-/* ------------------------------ registration ------------------------------ */
 export const SCHOOL_TYPES = [
   { value: 'primary', label: 'প্রাথমিক বিদ্যালয়' },
   { value: 'secondary', label: 'মাধ্যমিক বিদ্যালয়' },
@@ -94,5 +80,4 @@ export const SCHOOL_TYPES = [
   { value: 'specialized', label: 'বিশেষায়িত বিদ্যালয়' },
 ] as const;
 
-/** নতুন রেজিস্ট্রেশনের status — server-এ বসানো হয়, browser থেকে বদলানো যায় না */
 export const ACTIVE_STATUS_DEFAULT = 3;

@@ -6,12 +6,18 @@
  * - "সাবডোমেইন চেক করুন" → checkSubdomain()  (Server Action)
  *     available হলে সেটাই বেছে নেয়, না হলে suggestion থেকে বেছে নেওয়া যায়
  * - নিজের ডোমেইন দিলে সাবডোমেইন লাগে না; না দিলে সাবডোমেইন বাধ্যতামূলক
+ * - উপরে প্ল্যান বাছাই (PlanPicker) — URL-এর ?plan=&cycle= থেকে আগে থেকে বাছাই হয়ে থাকে
  * - "রেজিস্ট্রেশন সম্পন্ন করুন" → registerSchool()  (Server Action)
+ *     Laravel স্কুল তৈরি + ফ্রি ট্রায়াল চালু + প্রথম বিল → পেমেন্ট পেজে নিয়ে যায়
+ *     (/register/payment?token=…) — সেখানে এখনই বিকাশে পেমেন্ট, অথবা "পরে করব"
+ *
+ * ডাটা (প্ল্যানের তালিকা) সার্ভার থেকে props হয়ে আসে — RegistrationSection.tsx
  *
  * ডাটার পথ:  এই ফর্ম → actions/school.actions.ts → services/school.service.ts → Laravel
  * validation-এর নিয়ম lib/validators/school.ts-এ — ব্রাউজার আর server দুই জায়গায় একই।
  */
 import { useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   AtSign,
   Building2,
@@ -23,7 +29,6 @@ import {
   LoaderCircle,
   MapPin,
   Phone,
-  RotateCcw,
   School,
   Search,
   Send,
@@ -33,12 +38,15 @@ import {
 import { SCHOOL_TYPES } from '@/config/school';
 import { smoothScrollTo } from '@/components/layout/SmoothScroll';
 import { checkSubdomain, registerSchool } from '@/actions/school.actions';
+import PlanPicker, { defaultPlanKey } from './PlanPicker';
+import { toBn } from '@/lib/utils/format';
 import {
   SCHOOL_FIELD_RULES,
   cleanSchoolRegistration,
   validateSchoolRegistration,
 } from '@/lib/validators/school';
-import type { SchoolRegistrationField, SchoolRegistrationInput, SubdomainSuggestion } from '@/types/school';
+import type { Plan } from '@/types/pricing';
+import type { BillingCycle, SchoolRegistrationField, SchoolRegistrationInput, SubdomainSuggestion } from '@/types/school';
 
 /* ------------------------------ types ------------------------------ */
 type FormState = SchoolRegistrationInput;
@@ -59,6 +67,8 @@ const EMPTY: FormState = {
   domain: '',
   subdomain: '',
   type: SCHOOL_TYPES[0].value,
+  plan: '',
+  billing_cycle: 'yearly',
 };
 
 /** ব্লার/টাইপ করার সময় যে ঘরগুলো সাথে সাথে যাচাই হয় */
@@ -96,20 +106,32 @@ const IconInput = ({ icon: Icon, invalid, ...props }: { icon: LucideIcon; invali
 );
 
 const STEPS = [
-  { title: 'ফর্ম পূরণ করুন', desc: 'স্কুলের নাম, ইমেইল ও মোবাইল নম্বর দিন। ফ্রি সাবডোমেইন বেছে নিন।' },
-  { title: 'আমরা যাচাই করব', desc: 'আমাদের প্রতিনিধি তথ্য যাচাই করে আপনার সাথে যোগাযোগ করবেন।' },
-  { title: 'অ্যাকাউন্ট চালু', desc: 'আপনার স্কুলের নিজস্ব ড্যাশবোর্ড ও ওয়েবসাইট চালু হয়ে যাবে।' },
+  { title: 'প্ল্যান বেছে ফর্ম পূরণ করুন', desc: 'স্কুলের নাম, ইমেইল ও মোবাইল নম্বর দিন। ফ্রি সাবডোমেইন বেছে নিন।' },
+  { title: 'ফ্রি ট্রায়াল চালু', desc: 'রেজিস্ট্রেশনের সাথে সাথে ট্রায়াল শুরু — এখন কোনো টাকা লাগবে না।' },
+  { title: 'বিকাশে পেমেন্ট', desc: 'চাইলে এখনই, নয়তো ট্রায়াল শেষে স্কুল প্যানেল থেকে পেমেন্ট করুন।' },
 ];
 
+type Props = {
+  /** রেজিস্ট্রেশনে নেওয়া যায় এমন প্ল্যান (Custom বাদ) — খালি হলে বাছাইয়ের অংশ দেখায় না */
+  plans?: Plan[];
+  trialDays?: number;
+  freeMonths?: number;
+  currencySymbol?: string;
+};
+
 /* ============================== Component ============================== */
-export default function SchoolRegistration() {
-  const [form, setForm] = useState<FormState>(EMPTY);
+export default function SchoolRegistration({ plans = [], trialDays = 0, freeMonths = 0, currencySymbol = '৳' }: Props) {
+  const router = useRouter();
+  const [form, setForm] = useState<FormState>(() => ({ ...EMPTY, plan: defaultPlanKey(plans) }));
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string | null>>>({});
   const [check, setCheck] = useState<SubdomainCheck>({ status: 'idle' });
   const [selectedHost, setSelectedHost] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
-  const [done, setDone] = useState<{ school: string; host: string } | null>(null);
+  /** রেজিস্ট্রেশন সফল — পেমেন্ট পেজে যাচ্ছে */
+  const [done, setDone] = useState<{ school: string } | null>(null);
+
+  const choosePlan = (plan: string, billing_cycle: BillingCycle) => setForm((f) => ({ ...f, plan, billing_cycle }));
 
   const set = (field: FieldKey, value: string) => {
     setForm((f) => ({ ...f, [field]: value }));
@@ -190,22 +212,16 @@ export default function SchoolRegistration() {
     setSubmitting(true);
     const payload = cleanSchoolRegistration(form);
     const r = await registerSchool(payload);
-    setSubmitting(false);
 
+    console.log("What is the school registration response - ",r)
     if (r.ok) {
-      setDone({ school: payload.school_name, host: payload.domain || selectedHost });
-      setForm(EMPTY);
-      setErrors({});
-      setCheck({ status: 'idle' });
-      setSelectedHost('');
-      window.setTimeout(() => {
-        const el = document.getElementById('register-card');
-        if (el) smoothScrollTo(el, -120);
-      }, 50);
+      setDone({ school: payload.school_name });
+      router.push(`/register/payment?token=${encodeURIComponent(r.data.payment.token)}&welcome=1`);
       return;
     }
 
-    // server-এর field error গুলো সংশ্লিষ্ট ঘরে দেখাই
+    setSubmitting(false);
+    
     const fieldErrs = (r.fieldErrors ?? {}) as Partial<Record<FieldKey, string>>;
     if (Object.keys(fieldErrs).length) {
       setErrors((prev) => ({ ...prev, ...fieldErrs }));
@@ -225,7 +241,10 @@ export default function SchoolRegistration() {
         <div data-reveal className="lg:sticky lg:top-32">
           <span className="eyebrow">ফ্রি রেজিস্ট্রেশন</span>
           <h2 className="section-title">স্কুল রেজিস্ট্রেশন ফর্ম</h2>
-          <p className="section-desc">নিচের তথ্যগুলো দিন — আমরা যাচাই করে আপনার স্কুলের অ্যাকাউন্ট চালু করে দেব।</p>
+          <p className="section-desc">
+            প্ল্যান বেছে তথ্যগুলো দিন — রেজিস্ট্রেশনের সাথে সাথে{trialDays > 0 ? ` ${toBn(trialDays)} দিনের` : ''} ফ্রি ট্রায়াল
+            চালু হবে।
+          </p>
 
           <ol className="relative mt-10 space-y-7 before:absolute before:bottom-3 before:left-[19px] before:top-3 before:w-px before:bg-slate-200">
             {STEPS.map((s, i) => (
@@ -262,34 +281,32 @@ export default function SchoolRegistration() {
           </div>
 
           {done ? (
-            /* ---------- success view ---------- */
-            <div className="py-6 text-center" role="status" aria-live="polite">
+            /* ---------- সফল — পেমেন্ট পেজে যাচ্ছে ---------- */
+            <div className="py-10 text-center" role="status" aria-live="polite">
               <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/15">
                 <CircleCheck className="h-9 w-9 text-success" />
               </span>
               <h3 className="mt-6 text-2xl font-bold text-secondary">রেজিস্ট্রেশন সম্পন্ন হয়েছে!</h3>
               <p className="mx-auto mt-3 max-w-md text-base leading-7 text-body">
-                <strong className="text-secondary">{done.school}</strong>-এর আবেদন আমরা পেয়েছি। আমাদের একজন প্রতিনিধি শীঘ্রই
-                আপনার সাথে যোগাযোগ করবেন।
+                <strong className="text-secondary">{done.school}</strong>-এর ফ্রি ট্রায়াল চালু হয়েছে। পেমেন্ট পেজে নেওয়া হচ্ছে…
               </p>
-              {done.host && (
-                <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 font-mono text-sm text-primary">
-                  <Globe className="h-4 w-4" /> {done.host}
-                </p>
-              )}
-              <div className="mt-8">
-                <button
-                  type="button"
-                  onClick={() => setDone(null)}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-6 py-2.5 text-sm font-semibold text-secondary transition hover:border-primary hover:text-primary"
-                >
-                  <RotateCcw className="h-4 w-4" /> আরেকটি স্কুল রেজিস্টার করুন
-                </button>
-              </div>
+              <LoaderCircle className="mx-auto mt-6 h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
             /* ---------- form ---------- */
             <form onSubmit={handleSubmit} noValidate>
+              {plans.length > 0 && (
+                <PlanPicker
+                  plans={plans}
+                  plan={form.plan}
+                  cycle={form.billing_cycle}
+                  onChange={choosePlan}
+                  trialDays={trialDays}
+                  freeMonths={freeMonths}
+                  currencySymbol={currencySymbol}
+                />
+              )}
+
               <div className="grid gap-5 sm:grid-cols-2">
                 {/* স্কুলের নাম + সাবডোমেইন */}
                 <div className="sm:col-span-2">
@@ -513,7 +530,7 @@ export default function SchoolRegistration() {
                   </>
                 ) : (
                   <>
-                    রেজিস্ট্রেশন সম্পন্ন করুন <Send className="h-5 w-5" />
+                    {trialDays > 0 ? 'রেজিস্টার করে ফ্রি ট্রায়াল শুরু করুন' : 'রেজিস্ট্রেশন সম্পন্ন করুন'} <Send className="h-5 w-5" />
                   </>
                 )}
               </button>

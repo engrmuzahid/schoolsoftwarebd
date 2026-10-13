@@ -1,12 +1,3 @@
-/**
- * Server Action-এর ভেতরে service কল মোড়ানোর helper —
- * error হলে throw না করে { ok: false, message, fieldErrors } ফেরত দেয়।
- *
- *   'use server';
- *   export async function likeBlog(slug: string) {
- *     return runAction(() => blogService.like(slug));
- *   }
- */
 import 'server-only';
 import { toApiError } from './errors';
 import type { ActionResult } from './types';

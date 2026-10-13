@@ -1,10 +1,4 @@
 "use client";
-
-/**
- * টিউটোরিয়াল প্লেয়ার — বাঁয়ে বড় ভিডিও + বিস্তারিত, ডানে প্লেলিস্ট (সার্চ সহ)
- * - ভিডিও শুধু ক্লিক করলে লোড হয় (তার আগে thumbnail) — পেজ দ্রুত খোলে
- * - URL-এ #slug থাকে: /tutorial#how-to-add-student → সরাসরি ওই ভিডিও খোলে, শেয়ার করা যায়
- */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check,
@@ -23,7 +17,6 @@ import type { FeatureItem } from '@/types/feature';
 import { formatDate, toBn } from '@/lib/utils/format';
 
 
-/** YouTube লোগো (lucide-এ brand আইকন নেই) */
 const YoutubeIcon = ({ className = '' }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
     <path
@@ -35,18 +28,15 @@ const YoutubeIcon = ({ className = '' }: { className?: string }) => (
 
 const embedSrc = (item: FeatureItem) => {
   const id = item.video?.youtube_id;
-  // youtube-nocookie: ভিজিটর play না করা পর্যন্ত YouTube cookie বসায় না
   if (id) return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
   const url = item.video?.embed_url;
   return url ? `${url}${url.includes('?') ? '&' : '?'}autoplay=1&rel=0` : null;
 };
 
-/** thumbnail — ছবি না থাকলে বা লোড না হলে gradient */
 function Thumb({ src, eager = false }: { src: string | null; eager?: boolean }) {
   const [failed, setFailed] = useState(!src);
   const ref = useRef<HTMLImageElement>(null);
   useEffect(() => setFailed(!src), [src]);
-  // hydration-এর আগেই লোড ফেল করলে onError ধরা পড়ে না
   useEffect(() => {
     const el = ref.current;
     if (el && el.complete && el.naturalWidth === 0) setFailed(true);
@@ -72,7 +62,6 @@ function Thumb({ src, eager = false }: { src: string | null; eager?: boolean }) 
   );
 }
 
-/* ============================ ভিডিও (lite embed) ============================ */
 function VideoFrame({ item, playing, onPlay }: { item: FeatureItem; playing: boolean; onPlay: () => void }) {
   const src = embedSrc(item);
 
@@ -111,7 +100,6 @@ function VideoFrame({ item, playing, onPlay }: { item: FeatureItem; playing: boo
   );
 }
 
-/* ============================ বিস্তারিত ============================ */
 function Details({
   item,
   index,
@@ -140,7 +128,7 @@ function Details({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* clipboard বন্ধ থাকলে কিছু করার নেই */
+      
     }
   };
 
@@ -237,7 +225,6 @@ function Details({
   );
 }
 
-/* ============================ প্লেলিস্ট ============================ */
 function NowPlaying() {
   return (
     <span className="flex h-4 items-end gap-[3px]" aria-hidden="true">
@@ -270,7 +257,6 @@ function Playlist({
     return items.filter((i) => `${i.title} ${i.description ?? ''} ${i.points.join(' ')}`.toLowerCase().includes(s));
   }, [items, q]);
 
-  // active ভিডিও লিস্টে দেখা যায় এমনভাবে রাখি (শুধু লিস্টের ভেতরে স্ক্রল, পুরো পেজ না)
   useEffect(() => {
     const list = listRef.current;
     const el = list?.querySelector<HTMLElement>(`[data-id="${activeId}"]`);
@@ -316,7 +302,6 @@ function Playlist({
         )}
       </div>
 
-      {/* data-lenis-prevent: লিস্টের ভেতরে mouse wheel দিলে Lenis পুরো পেজ স্ক্রল করবে না */}
       <ol ref={listRef} data-lenis-prevent className="max-h-[420px] overflow-y-auto overscroll-contain p-2 lg:max-h-[560px]">
         {filtered.map((item) => {
           const active = item.id === activeId;
@@ -364,7 +349,6 @@ function Playlist({
   );
 }
 
-/* ============================ মূল কম্পোনেন্ট ============================ */
 export default function TutorialPlayer({ items }: { items: FeatureItem[] }) {
   const [activeId, setActiveId] = useState(items[0]?.id);
   const [playing, setPlaying] = useState(false);
@@ -374,7 +358,6 @@ export default function TutorialPlayer({ items }: { items: FeatureItem[] }) {
   const active = items[index];
   const single = items.length === 1;
 
-  // #slug দিয়ে এলে সেই ভিডিও (ব্রাউজারের back/forward-এও)
   useEffect(() => {
     const fromHash = () => {
       const slug = decodeURIComponent(window.location.hash.slice(1));
@@ -396,7 +379,6 @@ export default function TutorialPlayer({ items }: { items: FeatureItem[] }) {
     setActiveId(id);
     setPlaying(autoplay);
     window.history.replaceState(null, '', `#${item.slug}`);
-    // মোবাইলে প্লেয়ার স্ক্রিনের বাইরে থাকলে উপরে নিয়ে যাই
     const top = playerRef.current?.getBoundingClientRect().top ?? 0;
     if (playerRef.current && (top < 0 || top > window.innerHeight * 0.6)) smoothScrollTo(playerRef.current);
   };

@@ -14,7 +14,7 @@ import {
   validateSchoolRegistration,
 } from '@/lib/validators/school';
 import { schoolService } from '@/services/school.service';
-import type { SchoolRegistrationInput, SubdomainCheckResult } from '@/types/school';
+import type { RegistrationResult, SchoolRegistrationInput, SubdomainCheckResult } from '@/types/school';
 
 export async function checkSubdomain(schoolName: string): Promise<ActionResult<SubdomainCheckResult>> {
   const name = String(schoolName ?? '').trim();
@@ -24,8 +24,9 @@ export async function checkSubdomain(schoolName: string): Promise<ActionResult<S
   return runAction(() => schoolService.checkSubdomain(name));
 }
 
-export async function registerSchool(input: SchoolRegistrationInput): Promise<ActionResult<{ message: string | null }>> {
-  // ব্রাউজারে যাচাই হলেও এখানে আবার — কেউ সরাসরি পাঠালেও আটকাবে
+export async function registerSchool(
+  input: SchoolRegistrationInput,
+): Promise<ActionResult<RegistrationResult & { message: string | null }>> {
   const data = cleanSchoolRegistration({
     school_name: String(input?.school_name ?? ''),
     email: String(input?.email ?? ''),
@@ -34,6 +35,8 @@ export async function registerSchool(input: SchoolRegistrationInput): Promise<Ac
     domain: String(input?.domain ?? ''),
     subdomain: String(input?.subdomain ?? ''),
     type: String(input?.type ?? ''),
+    plan: String(input?.plan ?? ''),
+    billing_cycle: input?.billing_cycle === 'monthly' ? 'monthly' : 'yearly',
   });
 
   const fieldErrors = validateSchoolRegistration(data);

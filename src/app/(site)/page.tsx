@@ -1,4 +1,3 @@
-"use client"
 
 import {
   ArrowRight,
@@ -31,8 +30,14 @@ import Link from "next/link";
 import type { CSSProperties } from 'react';
 import ClientsSection from '@/components/shared/ClientsSection';
 import TemplatesSection from '@/components/home/TemplatesSection';
-import { AdminLoginSection, TeacherLoginSection } from '@/components/home/PanelLoginSection';
+import { AdminLoginSection } from '@/components/home/PanelLoginSection';
 import MobileAppSection from '@/components/home/MobileAppSection';
+import AnnualOfferBanner from '@/components/pricing/AnnualOfferBanner';
+import PlanPricingSection from '@/components/pricing/PlanPricingSection';
+import PlanComparison from '@/components/pricing/PlanComparison';
+import AddonsSection from '@/components/pricing/AddonsSection';
+import PricingSections from '@/components/pricing/PricingSections';
+
 const delay = (ms: number) => ({ '--reveal-delay': `${ms}ms` }) as CSSProperties;
 
 const HeroSection = () => {
@@ -661,6 +666,12 @@ export default function App() {
       <ModulesSection />
       <DashboardSection />
       <WhyChooseUsSection />
+      {/* <PlanPricingSection />
+      <AnnualOfferBanner />
+      <PlanComparison /> 
+      <AddonsSection />   */}
+
+      <PricingSections />
       <OneClickSection />
       <AchievementsSection />
       <VideoTutorialSection />

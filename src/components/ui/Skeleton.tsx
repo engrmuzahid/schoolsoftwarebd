@@ -1,8 +1,3 @@
-/**
- * লোড হওয়ার সময়ের ধূসর placeholder
- *   <Skeleton className="h-4 w-1/2" />
- *   <PageHeroSkeleton />   ← loading.tsx-এ hero-র জায়গায়
- */
 export function Skeleton({ className = '', dark = false }: { className?: string; dark?: boolean }) {
   return <div aria-hidden="true" className={`animate-pulse rounded-full ${dark ? 'bg-white/10' : 'bg-slate-200'} ${className}`} />;
 }
@@ -21,7 +16,6 @@ export function PageHeroSkeleton() {
   );
 }
 
-/** পুরো পেজের সাধারণ loading — hero + কয়েকটা কার্ড */
 export function PageSkeleton({ cards = 3 }: { cards?: number }) {
   return (
     <main aria-busy="true" aria-label="লোড হচ্ছে">

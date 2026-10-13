@@ -1,16 +1,3 @@
-/**
- * Laravel API-তে যাওয়ার একমাত্র দরজা — সব service এটা দিয়েই কল করে।
- * শুধু server-এ চলে (Server Component, Server Action, Route Handler)।
- *
- *   const r = await api.get<ApiResponse<Blog>>('school/blogs/abc', { tags: [CACHE_TAGS.blog] });
- *   const r = await api.post('school/register', { body: form });
- *
- * এখানে যা একবারেই সামলানো হয়:
- *   - base URL (NEXT_PUBLIC_API_BASE_URL), query string
- *   - Accept: application/json (না দিলে Laravel 404/422-এ HTML পাঠায়)
- *   - timeout, cache (revalidate + tags)
- *   - সব ধরনের error → ApiError (বাংলা মেসেজ সহ)
- */
 import 'server-only';
 import { apiUrl } from '@/config/env';
 import { REVALIDATE } from './cache-tags';
@@ -22,19 +9,11 @@ type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 export type ApiFetchOptions = {
   method?: Method;
   query?: Query;
-  /** JSON body (FormData দিলে যেমন আছে তেমন যায়) */
   body?: unknown;
-  /** কত সেকেন্ড cache থাকবে; false = একদম cache না (no-store)। GET-এ ডিফল্ট ৬০, বাকিগুলোতে false */
   revalidate?: number | false;
-  /** cache tag — পরে revalidateTag() দিয়ে মুছতে */
   tags?: string[];
-  /** মিলিসেকেন্ড, ডিফল্ট ১০ সেকেন্ড */
   timeout?: number;
   headers?: Record<string, string>;
-  /**
-   * আসল ভিজিটরের IP Laravel-এ পাঠাতে (throttle যেন প্রতি ভিজিটরে আলাদা হয়)।
-   * শুধু Server Action-এ ব্যবহার করুন — এতে পেজ dynamic হয়ে যায়।
-   */
   forwardClientIp?: boolean;
 };
 
@@ -104,7 +83,6 @@ export async function apiFetch<T>(path: string, opts: ApiFetchOptions = {}): Pro
   }
 }
 
-/** ছোট করে লেখার জন্য */
 export const api = {
   get: <T>(path: string, opts?: Omit<ApiFetchOptions, 'method' | 'body'>) => apiFetch<T>(path, { ...opts, method: 'GET' }),
   post: <T>(path: string, opts?: Omit<ApiFetchOptions, 'method'>) => apiFetch<T>(path, { ...opts, method: 'POST' }),
@@ -113,16 +91,8 @@ export const api = {
   delete: <T>(path: string, opts?: Omit<ApiFetchOptions, 'method' | 'body'>) => apiFetch<T>(path, { ...opts, method: 'DELETE' }),
 };
 
-/** `next build` চলছে কিনা */
 const IS_BUILD = process.env.NEXT_PHASE === 'phase-production-build';
 
-/**
- * পেজের মূল ডাটার জন্য —
- *   build-এর সময় API বন্ধ থাকলে fallback দেয় (build আটকায় না, ৬০ সেকেন্ড পর ISR নিজেই ঠিক করে নেয়)
- *   চালু সাইটে error হলে throw করে: আগে তৈরি পেজ থাকলে Next সেটাই দেখায়, না থাকলে error.tsx
- *
- *   const { items } = await buildSafe(featureService.list('tutorial'), { items: [], counts: {} });
- */
 export async function buildSafe<T>(promise: Promise<T>, fallback: T): Promise<T> {
   try {
     return await promise;
@@ -135,10 +105,6 @@ export async function buildSafe<T>(promise: Promise<T>, fallback: T): Promise<T>
   }
 }
 
-/**
- * পেজের অপ্রধান অংশের জন্য (related পোস্ট, ট্যাগ …) — error হলে fallback দেয়, পেজ ভাঙে না।
- *   const tags = await safe(getBlogTags(), []);
- */
 export async function safe<T>(promise: Promise<T>, fallback: T): Promise<T> {
   try {
     return await promise;

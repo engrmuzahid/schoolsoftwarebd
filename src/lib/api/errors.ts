@@ -1,22 +1,16 @@
-/**
- * API-র সব error এক রকম — Laravel যা-ই পাঠাক, কোডে সবসময় ApiError পাবেন।
- * (server ও client দুই জায়গাতেই import করা যায় — শুধু class আর ছোট helper)
- */
-
 export type ApiErrorCode =
-  | 'NETWORK' // সার্ভারে পৌঁছানো যায়নি
-  | 'TIMEOUT' // সময়মতো উত্তর আসেনি
-  | 'BAD_REQUEST' // 400
-  | 'UNAUTHORIZED' // 401
-  | 'FORBIDDEN' // 403
-  | 'NOT_FOUND' // 404
-  | 'VALIDATION' // 422
-  | 'RATE_LIMIT' // 429
-  | 'SERVER' // 5xx
-  | 'INVALID_RESPONSE' // JSON না
+  | 'NETWORK'
+  | 'TIMEOUT'
+  | 'BAD_REQUEST'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'VALIDATION'
+  | 'RATE_LIMIT'
+  | 'SERVER'
+  | 'INVALID_RESPONSE'
   | 'UNKNOWN';
 
-/** ফর্মের প্রতিটি ঘরের প্রথম error:  { email: 'ইমেইল সঠিক নয়' } */
 export type FieldErrors = Record<string, string>;
 
 export class ApiError extends Error {
@@ -33,7 +27,6 @@ export class ApiError extends Error {
   }
 }
 
-/* --------------------------- status → বাংলা মেসেজ --------------------------- */
 const CODE_BY_STATUS: Record<number, ApiErrorCode> = {
   400: 'BAD_REQUEST',
   401: 'UNAUTHORIZED',
@@ -60,14 +53,9 @@ export const DEFAULT_MESSAGES: Record<ApiErrorCode, string> = {
 export const codeFromStatus = (status: number): ApiErrorCode =>
   CODE_BY_STATUS[status] ?? (status >= 500 ? 'SERVER' : 'UNKNOWN');
 
-/**
- * Laravel-এর error JSON:  { message, errors: { field: ['...'] } }
- * কিছু endpoint errors রাখে data-র ভেতরে:  { status: 'error', message, data: { errors } }
- */
 type RawErrors = Record<string, string[] | string>;
 type LaravelErrorBody = { message?: string; errors?: RawErrors; data?: { errors?: RawErrors } | null };
 
-/** { email: ['ভুল', '...'] } → { email: 'ভুল' } */
 export function pickFieldErrors(body: LaravelErrorBody | null | undefined): FieldErrors {
   const raw = body?.errors ?? body?.data?.errors ?? {};
   const out: FieldErrors = {};
@@ -78,14 +66,12 @@ export function pickFieldErrors(body: LaravelErrorBody | null | undefined): Fiel
   return out;
 }
 
-/** Response থেকে ApiError বানায় */
 export async function apiErrorFromResponse(res: Response): Promise<ApiError> {
   const body = (await res.json().catch(() => ({}))) as LaravelErrorBody;
   const code = codeFromStatus(res.status);
 
   const fieldErrors = pickFieldErrors(body);
 
-  // 422-এ প্রথম ফিল্ডের মেসেজটাই সবচেয়ে কাজের; 5xx-এ Laravel-এর ইংরেজি/ডিবাগ মেসেজ দেখাই না
   const message =
     (code === 'VALIDATION' && Object.values(fieldErrors)[0]) ||
     (code !== 'SERVER' && code !== 'NOT_FOUND' && code !== 'RATE_LIMIT' && body.message) ||
@@ -94,7 +80,6 @@ export async function apiErrorFromResponse(res: Response): Promise<ApiError> {
   return new ApiError(message, { status: res.status, code, fieldErrors });
 }
 
-/** যেকোনো কিছু (fetch-এর TypeError, AbortError …) → ApiError */
 export function toApiError(e: unknown): ApiError {
   if (e instanceof ApiError) return e;
   if (e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError')) {

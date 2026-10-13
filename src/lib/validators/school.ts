@@ -55,4 +55,6 @@ export const cleanSchoolRegistration = (input: SchoolRegistrationInput): SchoolR
   domain: input.domain.trim(),
   subdomain: input.subdomain.trim(),
   type: input.type,
+  plan: /^[a-z][a-z0-9_-]{0,49}$/.test(input.plan ?? '') ? input.plan : '',
+  billing_cycle: input.billing_cycle === 'monthly' ? 'monthly' : 'yearly',
 });

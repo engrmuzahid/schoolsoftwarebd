@@ -14,9 +14,6 @@ import {
 } from 'lucide-react';
 import { APP_NAME } from '@/config/env';
 
-/* =====================================================================
-   মেনু এখানে সাজানো — নতুন পেজ/সাব-মেনু লাগলে শুধু এই array-তে যোগ করুন
-   ===================================================================== */
 type SubItem = { label: string; href: string; desc?: string; icon: LucideIcon };
 type NavItem =
   | { label: string; href: string; children?: never }

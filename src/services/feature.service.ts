@@ -1,18 +1,9 @@
-/**
- * Features / Tutorial service — শুধু server-এ চলে
- *   GET school/features?type=tutorial
- *   GET school/features?type=feature
- *
- * ব্যবহার:  import { featureService } from '@/services/feature.service';
- *           const { items } = await featureService.list('tutorial');
- */
 import 'server-only';
 import { api } from '@/lib/api/client';
 import { CACHE_TAGS } from '@/lib/api/cache-tags';
 import { assetUrl } from '@/config/env';
 import type { FeatureCounts, FeatureItem, FeatureList, FeatureType } from '@/types/feature';
 
-/** API-র ডাটা গুছিয়ে নিই — ফাঁকা পয়েন্ট বাদ, ছবির পূর্ণ URL */
 function normalize(item: FeatureItem): FeatureItem {
   const ytId = item.video?.youtube_id?.trim() || null;
   return {

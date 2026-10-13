@@ -1,10 +1,3 @@
-/**
- * ব্লগের HTML content নিরাপদ করা + সূচিপত্র (Table of Contents) তৈরি
- *   npm i sanitize-html && npm i -D @types/sanitize-html
- *
- * অ্যাডমিন প্যানেলের editor থেকে আসা HTML সরাসরি dangerouslySetInnerHTML-এ দিলে
- * <script>, onclick="" ইত্যাদি দিয়ে XSS হতে পারে — তাই আগে sanitize করি।
- */
 import 'server-only';
 import sanitizeHtml from 'sanitize-html';
 
@@ -12,7 +5,7 @@ export type TocItem = { id: string; text: string; level: 2 | 3 };
 
 const OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [
-    ...sanitizeHtml.defaults.allowedTags, // p, a, ul, ol, li, blockquote, table, code, pre, h1-h6 …
+    ...sanitizeHtml.defaults.allowedTags,
     'img',
     'figure',
     'figcaption',
@@ -37,13 +30,11 @@ const OPTIONS: sanitizeHtml.IOptions = {
     ol: ['start', 'type'],
     '*': ['style'],
   },
-  // style-এর মধ্যে শুধু লেখার alignment রাখি (editor-এর রং/ফন্ট সাইটের ডিজাইন নষ্ট করে)
   allowedStyles: { '*': { 'text-align': [/^(left|right|center|justify)$/] } },
   allowedSchemes: ['http', 'https', 'mailto', 'tel'],
   allowedSchemesByTag: { img: ['http', 'https', 'data'] },
   allowedIframeHostnames: ['www.youtube.com', 'youtube.com', 'www.youtube-nocookie.com', 'player.vimeo.com', 'www.facebook.com', 'www.google.com'],
   transformTags: {
-    // পেজে h1 একটাই থাকবে (শিরোনাম) — content-এর h1 → h2
     h1: 'h2',
     a: (tagName, attribs) => {
       const external = /^https?:\/\//i.test(attribs.href ?? '');
@@ -66,7 +57,6 @@ const decode = (s: string) =>
     .replace(/&quot;/g, '"')
     .replace(/&#0?39;/g, "'");
 
-/** বাংলা লেখা থেকেও কাজ করে: "১. রুটিন তৈরি করুন" → "১-রুটিন-তৈরি-করুন" */
 const slugify = (s: string) =>
   s
     .toLowerCase()
@@ -77,7 +67,6 @@ const slugify = (s: string) =>
 export function prepareBlogContent(raw: string): { html: string; toc: TocItem[] } {
   let html = sanitizeHtml(raw ?? '', OPTIONS);
 
-  /* h2/h3-তে id বসিয়ে সূচিপত্র বানাই */
   const toc: TocItem[] = [];
   const used = new Map<string, number>();
   html = html.replace(/<h([23])((?:\s[^>]*)?)>([\s\S]*?)<\/h\1>/g, (_m, lvl: string, attrs: string, inner: string) => {
@@ -91,7 +80,6 @@ export function prepareBlogContent(raw: string): { html: string; toc: TocItem[] 
     return `<h${lvl} id="${id}"${attrs}>${inner}</h${lvl}>`;
   });
 
-  /* বড় টেবিল মোবাইলে পাশে স্ক্রল হবে; ভিডিও embed 16:9 থাকবে */
   html = html
     .replace(/<table/g, '<div class="table-wrap"><table')
     .replace(/<\/table>/g, '</table></div>')

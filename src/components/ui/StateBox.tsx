@@ -1,8 +1,3 @@
-/**
- * খালি / error / "কিছু পাওয়া যায়নি" অবস্থার বক্স — সব module-এ একই রকম
- *   <StateBox icon={<FileSearch />} title="কোনো লেখা পাওয়া যায়নি" text="…" action={<Link …/>} />
- *   <StateBox tone="error" … />
- */
 import type { ReactNode } from 'react';
 
 type Props = {

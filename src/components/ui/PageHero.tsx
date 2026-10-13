@@ -1,30 +1,14 @@
-/**
- * ভেতরের পেজগুলোর উপরের dark hero — সব পেজে একই ডিজাইন
- *
- *   <PageHero
- *     breadcrumb={[{ label: 'ব্লগ' }]}
- *     title="শিক্ষা ও প্রযুক্তির"
- *     highlight="ব্লগ"
- *     description="…"
- *   >
- *     <BlogToolbar />            ← নিচে বাড়তি কিছু (বাটন, সার্চ) — ঐচ্ছিক
- *   </PageHero>
- */
 import type { CSSProperties, ReactNode } from 'react';
 import Breadcrumb, { type BreadcrumbItem } from './Breadcrumb';
 
 type Props = {
   title: ReactNode;
-  /** রঙিন (gradient) অংশ — title-এর পরে বসে */
   highlight?: ReactNode;
-  /** true হলে highlight নতুন লাইনে */
   highlightOnNewLine?: boolean;
   description?: ReactNode;
   breadcrumb?: BreadcrumbItem[];
-  /** breadcrumb title-এর উপরে (ডিফল্ট) নাকি নিচে */
   breadcrumbPosition?: 'top' | 'bottom';
   children?: ReactNode;
-  /** নিচের padding — ছবি/কার্ড hero-র উপর উঠে এলে বড় দিন */
   bottomSpace?: 'md' | 'lg' | 'xl';
   titleClassName?: string;
 };
@@ -46,7 +30,6 @@ export default function PageHero({
 
   return (
     <section className={`relative overflow-hidden bg-secondary ${BOTTOM[bottomSpace]}`}>
-      {/* আলো আর grid pattern */}
       <div className="pointer-events-none absolute -left-40 -top-40 h-[560px] w-[560px] rounded-full bg-primary/25 blur-[160px]" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 h-[520px] w-[520px] rounded-full bg-rose-500/20 blur-[160px]" />
       <div
@@ -58,7 +41,6 @@ export default function PageHero({
         }}
       />
 
-      {/* fixed navbar-এর উচ্চতা (~100px) উপরে ছেড়ে রাখা */}
       <div className="container-x relative z-10 pt-44 text-center lg:pt-48">
         <div data-reveal>
           {breadcrumbPosition === 'top' && crumbs}
